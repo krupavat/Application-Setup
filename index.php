@@ -1,6 +1,6 @@
 <?php session_start(); ?>
 <html>
-<head><title>Hello app</title>
+<head><title>Hello User</title>
 </head>
 <body>
 

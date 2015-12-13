@@ -1,10 +1,14 @@
 <?php
 // Start the session
 session_start();
+require 'vendor/autoload.php';	
 // In PHP versions earlier than 4.1.0, $HTTP_POST_FILES should be used instead
 // of $_FILES.
+if(isset ($_POST['usermail'])){
 echo $_POST['useremail'];
 $uploaddir = '/tmp/';
+}
+if(isset ($_FILES['userfile'])){
 $uploadfile = $uploaddir . basename($_FILES['userfile']['name']);
 echo '<pre>';
 if (move_uploaded_file($_FILES['userfile']['tmp_name'], $uploadfile)) {
@@ -14,15 +18,16 @@ if (move_uploaded_file($_FILES['userfile']['tmp_name'], $uploadfile)) {
 }
 echo 'Here is some more debugging info:';
 print_r($_FILES);
+}
 print "</pre>";
-require 'vendor/autoload.php';
+
 #use Aws\S3\S3Client;
 #$client = S3Client::factory();
 $s3 = new Aws\S3\S3Client([
     'version' => 'latest',
     'region'  => 'us-east-1'
 ]);
-$bucket = uniqid("php-jrh-",false);
+$bucket = uniqid("S3-ksr-",false);
 #$result = $client->createBucket(array(
 #    'Bucket' => $bucket
 #));
@@ -53,7 +58,7 @@ $rds = new Aws\Rds\RdsClient([
     'region'  => 'us-east-1'
 ]);
 $result = $rds->describeDBInstances([
-    'DBInstanceIdentifier' => 'mp1-jrh',
+    'DBInstanceIdentifier' => 'ksrmp1db',
     #'Filters' => [
     #    [
     #        'Name' => '<string>', // REQUIRED
@@ -67,14 +72,14 @@ $result = $rds->describeDBInstances([
 $endpoint = $result['DBInstances']['Endpoint']['Address']
     echo "============\n". $endpoint . "================";^M
 //echo "begin database";^M
-$link = mysqli_connect($endpoint,"controller","letmein888","customerrecords") or die("Error " . mysqli_error($link));
+$link = mysqli_connect($endpoint,"krupavat","Admin123","KSRDB") or die("Error " . mysqli_error($link));
 /* check connection */
 if (mysqli_connect_errno()) {
     printf("Connect failed: %s\n", mysqli_connect_error());
     exit();
 }
 /* Prepared statement, stage 1: prepare */
-if (!($stmt = $link->prepare("INSERT INTO items (id, email,phone,filename,s3rawurl,s3finishedurl,status,issubscribed) VALUES (NULL,?,?,?,?,?,?,?)"))) {
+if (!($stmt = $link->prepare("INSERT INTO items (id, email,phone,jpgfilename,s3rawurl,s3finishedurl,status,issubscribed) VALUES (NULL,?,?,?,?,?,?,?)"))) {
     echo "Prepare failed: (" . $link->errno . ") " . $link->error;
 }
 $email = $_POST['useremail'];
@@ -84,7 +89,7 @@ $filename = basename($_FILES['userfile']['name']);
 $s3finishedurl = "none";
 $status =0;
 $issubscribed=0;
-$stmt->bind_param("sssssii",$email,$phone,$filename,$s3rawurl,$s3finishedurl,$status,$issubscribed);
+$stmt->bind_param("sssssii",$email,$phone,$jpgfilename,$s3rawurl,$s3finishedurl,$status,$issubscribed);
 if (!$stmt->execute()) {
     echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
 }
